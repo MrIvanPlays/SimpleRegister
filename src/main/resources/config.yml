@@ -13,6 +13,9 @@ allowInventoryInteraction: false
 # Max accounts allowed per IP addressalready_registered
 max_accounts_allowed: 2
 
+# Should we teleport the player every time to the set spawn or not
+forceSpawnTeleport: true
+
 # All configurable messages
 messages:
   register_message: "&eYou have to register before playing into our server! /register <password> <confirmPassword>"

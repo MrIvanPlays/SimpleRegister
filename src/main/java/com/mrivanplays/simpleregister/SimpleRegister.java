@@ -3,6 +3,7 @@ package com.mrivanplays.simpleregister;
 import com.mrivanplays.simpleregister.commands.SimpleRegisterCommands;
 import com.mrivanplays.simpleregister.config.Configuration;
 import com.mrivanplays.simpleregister.listeners.PluginEventListener;
+import com.mrivanplays.simpleregister.storage.SpawnYAML;
 import com.mrivanplays.simpleregister.storage.Storage;
 import com.mrivanplays.simpleregister.util.Log4jFiltering;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -11,6 +12,7 @@ public final class SimpleRegister extends JavaPlugin {
 
   private Storage storage;
   private Configuration config;
+  private SpawnYAML spawn;
   private PlayerSessionHandler sessionHandler;
 
   @Override
@@ -19,6 +21,7 @@ public final class SimpleRegister extends JavaPlugin {
     long start = System.currentTimeMillis();
     storage = new Storage(getDataFolder());
     config = new Configuration(getDataFolder());
+    spawn = new SpawnYAML(getDataFolder());
     sessionHandler = new PlayerSessionHandler();
 
     // command register
@@ -39,6 +42,10 @@ public final class SimpleRegister extends JavaPlugin {
 
   public Configuration getConfiguration() {
     return config;
+  }
+
+  public SpawnYAML getSpawn() {
+    return spawn;
   }
 
   public PlayerSessionHandler getSessionHandler() {

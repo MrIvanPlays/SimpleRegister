@@ -26,6 +26,9 @@ public class PluginEventListener implements Listener {
 
   @EventHandler
   public void onJoin(PlayerJoinEvent event) {
+    if (plugin.getConfiguration().getBoolean("forceSpawnTeleport") && plugin.getSpawn().getLocation() != null) {
+      event.getPlayer().teleport(plugin.getSpawn().getLocation());
+    }
     new Runnable() {
 
       final BukkitTask task =

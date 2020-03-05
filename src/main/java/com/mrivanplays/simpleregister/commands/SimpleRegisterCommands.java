@@ -39,6 +39,8 @@ public class SimpleRegisterCommands implements TabExecutor {
             "/simpleregister viewalts <playerName> - Lists the alt accounts the player have registered");
         sender.sendMessage(
             "/simpleregister unregister <playerName> - Forcibly unregisters the specified player");
+        sender.sendMessage(
+            "/simpleregister setspawn - Sets the point where all players will be forcibly teleported when they join the server.");
         return true;
       }
 
@@ -134,6 +136,15 @@ public class SimpleRegisterCommands implements TabExecutor {
 
           plugin.getStorage().removeEntry(uPlayer.getUniqueId());
           sender.sendMessage("Player unregistered successfully");
+          break;
+        case "setspawn":
+          if (!(sender instanceof Player)) {
+            sender.sendMessage("Player only");
+            return true;
+          }
+          Player executor = (Player) sender;
+          plugin.getSpawn().setLocation(executor.getLocation());
+          executor.sendMessage("Spawn location set.");
           break;
         default:
           sender.sendMessage("Unknown command. Run \"/simpleregister\" for a list of commands.");
