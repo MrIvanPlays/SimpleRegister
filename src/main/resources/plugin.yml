@@ -1,0 +1,17 @@
+name: SimpleRegister
+version: ${project.version}
+main: com.mrivanplays.simpleregister.SimpleRegister
+api-version: 1.13
+description: ${project.description}
+authors:
+  - MrIvanPlays
+
+commands:
+  simpleregister:
+    description: Admin command
+  login:
+    description: Login command
+  register:
+    description: Register command
+  unregister:
+    description: Unregisters the user who have ran the command
