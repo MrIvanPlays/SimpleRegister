@@ -15,8 +15,6 @@ import com.mrivanplays.simpleregister.storage.StorageType;
 import com.mrivanplays.simpleregister.util.Log4jFiltering;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.concurrent.Executor;
-import org.bukkit.Bukkit;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -42,9 +40,7 @@ public final class SimpleRegister extends JavaPlugin {
   public void onEnable() {
     Log4jFiltering.setup();
     long start = System.currentTimeMillis();
-    Executor executor =
-        (command) -> Bukkit.getScheduler().runTaskAsynchronously(SimpleRegister.this, command);
-    storage = new Storage(this, executor);
+    storage = new Storage(this);
     storage.connect();
     spawn = new SpawnYAML(getDataFolder());
     sessionHandler = new PlayerSessionHandler();

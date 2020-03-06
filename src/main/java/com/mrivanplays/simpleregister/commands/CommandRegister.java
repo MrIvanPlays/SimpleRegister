@@ -30,7 +30,7 @@ public class CommandRegister implements CommandExecutor {
       return true;
     }
     String ip = player.getAddress().getAddress().getHostName();
-    List<PasswordEntry> accounts = plugin.getStorage().getAltAccounts(ip).join();
+    List<PasswordEntry> accounts = plugin.getStorage().getAltAccounts(ip);
     if (accounts.size() == plugin.getConfiguration().getInt("max_accounts_allowed")) {
       player.kickPlayer(plugin.getConfiguration().getString("messages.max_accounts_exceeded"));
       return true;
