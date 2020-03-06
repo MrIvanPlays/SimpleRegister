@@ -9,6 +9,7 @@ allowOtherCommands: false
 allowMovement: false
 allowChat: false
 allowInventoryInteraction: false
+allowItemDrop: false
 
 # Max accounts allowed per IP addressalready_registered
 max_accounts_allowed: 2

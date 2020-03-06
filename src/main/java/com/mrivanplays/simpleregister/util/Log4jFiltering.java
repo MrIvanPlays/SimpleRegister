@@ -27,7 +27,7 @@ public class Log4jFiltering {
     }
 
     private static Result validateMessage(String message) {
-      return LogFilterHelper.isSensitiveAuthMeCommand(message)
+      return LogFilterHelper.isSensitiveCommand(message)
           ? Result.DENY
           : Result.NEUTRAL;
     }

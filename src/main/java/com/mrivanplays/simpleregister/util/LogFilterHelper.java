@@ -7,8 +7,9 @@ import java.util.List;
 public class LogFilterHelper {
 
   static final List<String> COMMANDS_TO_SKIP =
-      withAndWithoutAuthMePrefix(
+      withAndWithoutPrefix(
           "/login ",
+          "/l",
           "/register ",
           "/unregister ",
           "/changepassword ",
@@ -21,7 +22,7 @@ public class LogFilterHelper {
     // Util class
   }
 
-  static boolean isSensitiveAuthMeCommand(String message) {
+  static boolean isSensitiveCommand(String message) {
     if (message == null) {
       return false;
     }
@@ -30,7 +31,7 @@ public class LogFilterHelper {
         && containsAny(lowerMessage, COMMANDS_TO_SKIP);
   }
 
-  private static List<String> withAndWithoutAuthMePrefix(String... commands) {
+  private static List<String> withAndWithoutPrefix(String... commands) {
     List<String> commandList = new ArrayList<>(commands.length * 2);
     for (String command : commands) {
       commandList.add(command);

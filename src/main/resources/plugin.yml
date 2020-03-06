@@ -11,6 +11,7 @@ commands:
     description: Admin command
   login:
     description: Login command
+    aliases: [l]
   register:
     description: Register command
   unregister:
