@@ -100,27 +100,23 @@
                 </relocation>
                 <relocation>
                   <pattern>com.zaxxer.hikari</pattern>
-                  <shadedPattern>com.mrivanplays.networkbans.libs.hikari</shadedPattern>
+                  <shadedPattern>com.mrivanplays.simpleregister.libs.hikari</shadedPattern>
                 </relocation>
                 <relocation>
                   <pattern>org.mariadb.jdbc</pattern>
-                  <shadedPattern>com.mrivanplays.networkbans.libs.mariadb</shadedPattern>
+                  <shadedPattern>com.mrivanplays.simpleregister.libs.mariadb</shadedPattern>
                 </relocation>
                 <relocation>
                   <pattern>com.mysql</pattern>
-                  <shadedPattern>com.mrivanplays.networkbans.libs.mysql</shadedPattern>
+                  <shadedPattern>com.mrivanplays.simpleregister.libs.mysql</shadedPattern>
                 </relocation>
                 <relocation>
                   <pattern>org.postgresql</pattern>
-                  <shadedPattern>com.mrivanplays.networkbans.libs.postgresql</shadedPattern>
+                  <shadedPattern>com.mrivanplays.simpleregister.libs.postgresql</shadedPattern>
                 </relocation>
                 <relocation>
-                  <pattern>org.bson</pattern>
-                  <shadedPattern>com.mrivanplays.networkbans.libs.bson</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>com.mongodb</pattern>
-                  <shadedPattern>com.mrivanplays.networkbans.libs.mongodb</shadedPattern>
+                  <pattern>co.aikar.taskchain</pattern>
+                  <shadedPattern>com.mrivanplays.simpleregister.libs.taskchain</shadedPattern>
                 </relocation>
               </relocations>
               <filters>
@@ -167,6 +163,10 @@
       <id>sonatype</id>
       <url>https://oss.sonatype.org/content/groups/public/</url>
     </repository>
+    <repository>
+      <id>aikar</id>
+      <url>https://repo.aikar.co/content/groups/aikar/</url>
+    </repository>
   </repositories>
 
   <dependencies>
@@ -192,6 +192,12 @@
       <artifactId>HikariCP</artifactId>
       <version>3.4.2</version>
       <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>co.aikar</groupId>
+      <artifactId>taskchain-bukkit</artifactId>
+      <version>3.7.2</version>
+      <scope>compile</scope>
     </dependency>
   </dependencies>
 </project>

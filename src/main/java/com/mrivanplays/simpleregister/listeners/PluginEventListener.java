@@ -1,7 +1,6 @@
 package com.mrivanplays.simpleregister.listeners;
 
 import com.mrivanplays.simpleregister.SimpleRegister;
-import com.mrivanplays.simpleregister.storage.PasswordEntry;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -43,24 +42,30 @@ public class PluginEventListener implements Listener {
           task.cancel();
           return;
         }
-        PasswordEntry entry = plugin.getStorage().getPasswordEntry(event.getPlayer().getUniqueId());
-        if (entry == null) {
-          event
-              .getPlayer()
-              .sendMessage(plugin.getConfiguration().getString("messages.register_message"));
-        } else {
-          event
-              .getPlayer()
-              .sendMessage(plugin.getConfiguration().getString("messages.login_message"));
-        }
-        int delay = plugin.getConfiguration().getInt("spam_each_seconds");
-        secondsPassed = secondsPassed + delay;
-        if (secondsPassed == plugin.getConfiguration().getInt("kick_at_seconds")) {
-          task.cancel();
-          event
-              .getPlayer()
-              .kickPlayer(plugin.getConfiguration().getString("messages.time_exceeded"));
-        }
+        plugin
+            .getStorage()
+            .getPasswordEntrySync(
+                event.getPlayer().getUniqueId(),
+                entry -> {
+                  if (entry == null) {
+                    event
+                        .getPlayer()
+                        .sendMessage(
+                            plugin.getConfiguration().getString("messages.register_message"));
+                  } else {
+                    event
+                        .getPlayer()
+                        .sendMessage(plugin.getConfiguration().getString("messages.login_message"));
+                  }
+                  int delay = plugin.getConfiguration().getInt("spam_each_seconds");
+                  secondsPassed = secondsPassed + delay;
+                  if (secondsPassed == plugin.getConfiguration().getInt("kick_at_seconds")) {
+                    task.cancel();
+                    event
+                        .getPlayer()
+                        .kickPlayer(plugin.getConfiguration().getString("messages.time_exceeded"));
+                  }
+                });
       }
     };
   }
@@ -136,7 +141,9 @@ public class PluginEventListener implements Listener {
     }
     if (!plugin.getConfiguration().getBoolean("allowItemDrop")) {
       event.setCancelled(true);
-      event.getPlayer().sendMessage(plugin.getConfiguration().getString("messages.have_to_be_logged_in"));
+      event
+          .getPlayer()
+          .sendMessage(plugin.getConfiguration().getString("messages.have_to_be_logged_in"));
     }
   }
 

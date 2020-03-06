@@ -1,5 +1,6 @@
 package com.mrivanplays.simpleregister.storage;
 
+import co.aikar.taskchain.TaskChain;
 import com.mrivanplays.simpleregister.DatabaseCredentials;
 import com.mrivanplays.simpleregister.SimpleRegister;
 import com.mrivanplays.simpleregister.storage.flatfile.FlatfileStorage;
@@ -11,6 +12,7 @@ import com.mrivanplays.simpleregister.storage.sql.factory.flatfile.H2ConnectionF
 import com.mrivanplays.simpleregister.storage.sql.factory.flatfile.SQLiteConnectionFactory;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 public class Storage {
 
@@ -31,27 +33,52 @@ public class Storage {
   }
 
   public void addPassword(PasswordEntry entry) {
-    provider.addPassword(entry);
+    plugin
+        .getServer()
+        .getScheduler()
+        .runTaskAsynchronously(plugin, () -> provider.addPassword(entry));
   }
 
-  public List<PasswordEntry> getPasswords() {
-    return provider.getPasswords();
+  public void getPasswords(Consumer<List<PasswordEntry>> callback) {
+    TaskChain<?> chain = plugin.newSharedChain("getPasswords");
+    chain
+        .async(() -> chain.setTaskData("passwords", provider.getPasswords()))
+        .sync(() -> callback.accept(chain.getTaskData("passwords")))
+        .execute();
   }
 
-  public PasswordEntry getPasswordEntry(UUID uuid) {
-    return provider.getPasswordEntry(uuid);
+  public void getPasswordEntry(UUID uuid, Consumer<PasswordEntry> callback) {
+    TaskChain<?> chain = plugin.newSharedChain("getPasswordEntry");
+    chain
+        .async(() -> chain.setTaskData("entry", provider.getPasswordEntry(uuid)))
+        .sync(() -> callback.accept(chain.getTaskData("entry")))
+        .execute();
   }
 
-  public List<PasswordEntry> getAltAccounts(String ip) {
-    return provider.getAltAccounts(ip);
+  public void getPasswordEntrySync(UUID uuid, Consumer<PasswordEntry> callback) {
+    callback.accept(provider.getPasswordEntry(uuid));
+  }
+
+  public void getAltAccounts(String ip, Consumer<List<PasswordEntry>> callback) {
+    TaskChain<?> chain = plugin.newSharedChain("getAltAccounts");
+    chain
+        .async(() -> chain.setTaskData("altAccounts", provider.getAltAccounts(ip)))
+        .sync(() -> callback.accept(chain.getTaskData("altAccounts")))
+        .execute();
   }
 
   public void modifyPassword(UUID uuid, PasswordEntry entry) {
-    provider.modifyPassword(uuid, entry);
+    plugin
+        .getServer()
+        .getScheduler()
+        .runTaskAsynchronously(plugin, () -> provider.modifyPassword(uuid, entry));
   }
 
   public void removeEntry(UUID uuid) {
-    provider.removeEntry(uuid);
+    plugin
+        .getServer()
+        .getScheduler()
+        .runTaskAsynchronously(plugin, () -> provider.removeEntry(uuid));
   }
 
   private StorageImplementation supplyDrop() {

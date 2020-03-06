@@ -2,7 +2,6 @@ package com.mrivanplays.simpleregister.commands;
 
 import at.favre.lib.crypto.bcrypt.BCrypt;
 import com.mrivanplays.simpleregister.SimpleRegister;
-import com.mrivanplays.simpleregister.storage.PasswordEntry;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -34,21 +33,28 @@ public class CommandLogin implements CommandExecutor {
     }
 
     String password = args[0];
-    PasswordEntry entry = plugin.getStorage().getPasswordEntry(player.getUniqueId());
-    if (entry == null) {
-      player.sendMessage(plugin.getConfiguration().getString("messages.have_to_register_first"));
-      return true;
-    }
+    plugin
+        .getStorage()
+        .getPasswordEntry(
+            player.getUniqueId(),
+            entry -> {
+              if (entry == null) {
+                player.sendMessage(
+                    plugin.getConfiguration().getString("messages.have_to_register_first"));
+                return;
+              }
 
-    BCrypt.Result result =
-        BCrypt.verifyer().verify(password.toCharArray(), entry.getPassword().toCharArray());
-    if (!result.verified) {
-      player.sendMessage(plugin.getConfiguration().getString("messages.wrong_password"));
-      return true;
-    }
+              BCrypt.Result result =
+                  BCrypt.verifyer()
+                      .verify(password.toCharArray(), entry.getPassword().toCharArray());
+              if (!result.verified) {
+                player.sendMessage(plugin.getConfiguration().getString("messages.wrong_password"));
+                return;
+              }
 
-    plugin.getSessionHandler().addLoggedIn(player.getUniqueId());
-    player.sendMessage(plugin.getConfiguration().getString("messages.login_successful"));
+              plugin.getSessionHandler().addLoggedIn(player.getUniqueId());
+              player.sendMessage(plugin.getConfiguration().getString("messages.login_successful"));
+            });
     return true;
   }
 }

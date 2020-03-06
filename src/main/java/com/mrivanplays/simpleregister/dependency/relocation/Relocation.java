@@ -9,7 +9,7 @@ import java.util.Objects;
  * @author lucko
  */
 public final class Relocation {
-  private static final String RELOCATION_PREFIX = "com.mrivanplays.networkbans.libs.";
+  private static final String RELOCATION_PREFIX = "com.mrivanplays.simpleregister.libs.";
 
   public static Relocation of(String id, String pattern) {
     return new Relocation(pattern.replace("{}", "."), RELOCATION_PREFIX + id);

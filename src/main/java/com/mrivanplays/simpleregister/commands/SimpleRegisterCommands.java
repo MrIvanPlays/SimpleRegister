@@ -68,23 +68,28 @@ public class SimpleRegisterCommands implements TabExecutor {
         }
 
         OfflinePlayer cpPlayer = Bukkit.getOfflinePlayer(args[1]);
-        PasswordEntry entry = plugin.getStorage().getPasswordEntry(cpPlayer.getUniqueId());
-        if (entry == null) {
-          sender.sendMessage("Cannot change a password of unregistered user");
-          return true;
-        }
-
-        String cpPassword = args[2];
-
-        PasswordEntry newEntry =
-            new PasswordEntry(
-                args[1],
+        plugin
+            .getStorage()
+            .getPasswordEntry(
                 cpPlayer.getUniqueId(),
-                entry.getPlayerIP(),
-                BCrypt.withDefaults().hashToString(12, cpPassword.toCharArray()));
+                entry -> {
+                  if (entry == null) {
+                    sender.sendMessage("Cannot change a password of unregistered user");
+                    return;
+                  }
 
-        plugin.getStorage().modifyPassword(cpPlayer.getUniqueId(), newEntry);
-        sender.sendMessage("Password changed successfully");
+                  String cpPassword = args[2];
+
+                  PasswordEntry newEntry =
+                      new PasswordEntry(
+                          args[1],
+                          cpPlayer.getUniqueId(),
+                          entry.getPlayerIP(),
+                          BCrypt.withDefaults().hashToString(12, cpPassword.toCharArray()));
+
+                  plugin.getStorage().modifyPassword(cpPlayer.getUniqueId(), newEntry);
+                  sender.sendMessage("Password changed successfully");
+                });
         break;
       case "viewalts":
         if (args.length < 2) {
@@ -93,32 +98,43 @@ public class SimpleRegisterCommands implements TabExecutor {
         }
 
         OfflinePlayer vaPlayer = Bukkit.getOfflinePlayer(args[1]);
-        PasswordEntry passwordEntry = plugin.getStorage().getPasswordEntry(vaPlayer.getUniqueId());
-        if (passwordEntry == null) {
-          sender.sendMessage("The specified player isn't registered. We cannot lookup for alts.");
-          return true;
-        }
-        if (passwordEntry.getPlayerIP() == null) {
-          sender.sendMessage(
-              "The specified player was forcibly registered. We cannot lookup for alts.");
-          return true;
-        }
+        plugin
+            .getStorage()
+            .getPasswordEntry(
+                vaPlayer.getUniqueId(),
+                passwordEntry -> {
+                  if (passwordEntry == null) {
+                    sender.sendMessage(
+                        "The specified player isn't registered. We cannot lookup for alts.");
+                    return;
+                  }
+                  if (passwordEntry.getPlayerIP() == null) {
+                    sender.sendMessage(
+                        "The specified player was forcibly registered. We cannot lookup for alts.");
+                    return;
+                  }
+                  plugin
+                      .getStorage()
+                      .getAltAccounts(
+                          passwordEntry.getPlayerIP(),
+                          alts -> {
+                            alts.removeIf(e -> e.getPlayerUUID().equals(vaPlayer.getUniqueId()));
 
-        List<PasswordEntry> alts = plugin.getStorage().getAltAccounts(passwordEntry.getPlayerIP());
-        alts.removeIf(e -> e.getPlayerUUID().equals(vaPlayer.getUniqueId()));
+                            if (alts.isEmpty()) {
+                              sender.sendMessage("Player " + args[1] + " has no alt accounts.");
+                              return;
+                            }
 
-        if (alts.isEmpty()) {
-          sender.sendMessage("Player " + args[1] + " has no alt accounts.");
-          return true;
-        }
-
-        sender.sendMessage("Player " + args[1] + " has " + alts.size() + " alt accounts");
-        StringBuilder builder = new StringBuilder();
-        for (PasswordEntry altEntry : alts) {
-          OfflinePlayer alt = Bukkit.getOfflinePlayer(altEntry.getPlayerUUID());
-          builder.append(alt.getName()).append(" ; ");
-        }
-        sender.sendMessage(builder.substring(0, builder.length() - 3));
+                            sender.sendMessage(
+                                "Player " + args[1] + " has " + alts.size() + " alt accounts");
+                            StringBuilder builder = new StringBuilder();
+                            for (PasswordEntry altEntry : alts) {
+                              OfflinePlayer alt = Bukkit.getOfflinePlayer(altEntry.getPlayerUUID());
+                              builder.append(alt.getName()).append(" ; ");
+                            }
+                            sender.sendMessage(builder.substring(0, builder.length() - 3));
+                          });
+                });
         break;
       case "unregister":
         if (args.length < 2) {
@@ -127,14 +143,19 @@ public class SimpleRegisterCommands implements TabExecutor {
         }
 
         OfflinePlayer uPlayer = Bukkit.getOfflinePlayer(args[1]);
-        PasswordEntry pEntry = plugin.getStorage().getPasswordEntry(uPlayer.getUniqueId());
-        if (pEntry == null) {
-          sender.sendMessage("Cannot unregister a non-registered user.");
-          return true;
-        }
+        plugin
+            .getStorage()
+            .getPasswordEntry(
+                uPlayer.getUniqueId(),
+                pEntry -> {
+                  if (pEntry == null) {
+                    sender.sendMessage("Cannot unregister a non-registered user.");
+                    return;
+                  }
 
-        plugin.getStorage().removeEntry(uPlayer.getUniqueId());
-        sender.sendMessage("Player unregistered successfully");
+                  plugin.getStorage().removeEntry(uPlayer.getUniqueId());
+                  sender.sendMessage("Player unregistered successfully");
+                });
         break;
       case "setspawn":
         if (!(sender instanceof Player)) {

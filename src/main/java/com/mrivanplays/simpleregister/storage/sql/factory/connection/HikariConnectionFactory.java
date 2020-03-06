@@ -46,13 +46,28 @@ public abstract class HikariConnectionFactory implements SQLConnectionFactory {
   @Override
   public void connect() throws SQLException {
     HikariConfig config = new HikariConfig();
-    config.setPoolName("networkbans-hikari");
+    config.setPoolName("simpleregister-hikari");
     appendConfigurationInfo(config);
 
     Map<String, String> properties = new HashMap<>();
     properties.put("useUnicode", "true");
     properties.put("characterEncoding", "utf8");
+//    properties.put("cachePrepStmts", "true");
+//    properties.put("prepStmtCacheSize", "250");
+//    properties.put("prepStmtCacheSqlLimit", "2048");
+//    properties.put("useServerPrepStmts", "true");
+//    properties.put("useLocalSessionState", "true");
+//    properties.put("rewriteBatchedStatements", "true");
+//    properties.put("cacheResultSetMetadata", "true");
+//    properties.put("cacheServerConfiguration", "true");
+//    properties.put("elideSetAutoCommits", "true");
+//    properties.put("maintainTimeStats", "false");
     appendProperties(config, properties);
+
+//    config.setMaximumPoolSize(10);
+//    config.setMinimumIdle(10);
+//    config.setConnectionTimeout(5000);
+//    config.setInitializationFailTimeout(-1);
 
     hikari = new HikariDataSource(config);
   }
