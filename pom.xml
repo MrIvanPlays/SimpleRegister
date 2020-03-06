@@ -13,7 +13,7 @@
   <description>Simple plugin for register and login. </description>
 
   <properties>
-    <build.number>unknown</build.number>
+    <buildNumber>unknown</buildNumber>
     <java.version>1.8</java.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
@@ -50,14 +50,14 @@
 
   <build>
     <defaultGoal>clean package</defaultGoal>
-    <finalName>${project.artifactId}-${build.number}</finalName>
+    <finalName>${project.artifactId}-${buildNumber}</finalName>
     <plugins>
       <plugin>
         <groupId>net.md-5</groupId>
         <artifactId>scriptus</artifactId>
         <version>0.3.2</version>
         <configuration>
-          <format>git:${project.name}:${project.version}:%s:${build.number}</format>
+          <format>git:${project.name}:${project.version}:%s:${buildNumber}</format>
         </configuration>
         <executions>
           <execution>
