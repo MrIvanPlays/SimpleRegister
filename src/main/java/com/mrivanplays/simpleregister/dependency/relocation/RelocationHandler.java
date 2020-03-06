@@ -1,8 +1,8 @@
 package com.mrivanplays.simpleregister.dependency.relocation;
 
-import com.mrivanplays.networkbans.dependency.classloader.IsolatedClassLoader;
 import com.mrivanplays.simpleregister.dependency.Dependency;
 import com.mrivanplays.simpleregister.dependency.DependencyManager;
+import com.mrivanplays.simpleregister.dependency.classloader.IsolatedClassLoader;
 import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
