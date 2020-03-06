@@ -69,8 +69,8 @@ public class PluginEventListener implements Listener {
   public void onPreProcess(PlayerCommandPreprocessEvent event) {
     String commandName = event.getMessage().split(" ")[0].replace("/", "");
     if (!commandName.equalsIgnoreCase("login")
-        || !commandName.equalsIgnoreCase("l")
-        || !commandName.equalsIgnoreCase("register")) {
+        && !commandName.equalsIgnoreCase("l")
+        && !commandName.equalsIgnoreCase("register")) {
       if (plugin.getSessionHandler().hasLoggedIn(event.getPlayer().getUniqueId())) {
         return;
       }
@@ -136,7 +136,7 @@ public class PluginEventListener implements Listener {
     }
     if (!plugin.getConfiguration().getBoolean("allowItemDrop")) {
       event.setCancelled(true);
-      event.getPlayer().sendMessage(plugin.getConfiguration().getString("message.have_to_be_logged_in"));
+      event.getPlayer().sendMessage(plugin.getConfiguration().getString("messages.have_to_be_logged_in"));
     }
   }
 
