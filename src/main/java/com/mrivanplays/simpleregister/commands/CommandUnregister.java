@@ -30,7 +30,7 @@ public class CommandUnregister implements CommandExecutor {
         return true;
       }
       String password = args[0];
-      PasswordEntry pwEntry = plugin.getStorage().getPasswordEntry(player.getUniqueId());
+      PasswordEntry pwEntry = plugin.getStorage().getPasswordEntry(player.getUniqueId()).join();
       BCrypt.Result result =
           BCrypt.verifyer().verify(password.toCharArray(), pwEntry.getPassword().toCharArray());
       if (result.verified) {

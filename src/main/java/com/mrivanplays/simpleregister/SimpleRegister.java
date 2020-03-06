@@ -5,11 +5,18 @@ import com.mrivanplays.simpleregister.commands.CommandRegister;
 import com.mrivanplays.simpleregister.commands.CommandUnregister;
 import com.mrivanplays.simpleregister.commands.SimpleRegisterCommands;
 import com.mrivanplays.simpleregister.config.Configuration;
+import com.mrivanplays.simpleregister.dependency.DependencyManager;
+import com.mrivanplays.simpleregister.dependency.classloader.PluginClassLoader;
+import com.mrivanplays.simpleregister.dependency.classloader.ReflectionClassLoader;
 import com.mrivanplays.simpleregister.listeners.PluginEventListener;
 import com.mrivanplays.simpleregister.storage.SpawnYAML;
 import com.mrivanplays.simpleregister.storage.Storage;
+import com.mrivanplays.simpleregister.storage.StorageType;
 import com.mrivanplays.simpleregister.util.Log4jFiltering;
 import java.util.Collections;
+import java.util.EnumSet;
+import java.util.concurrent.Executor;
+import org.bukkit.Bukkit;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -19,13 +26,26 @@ public final class SimpleRegister extends JavaPlugin {
   private Configuration config;
   private SpawnYAML spawn;
   private PlayerSessionHandler sessionHandler;
+  private PluginClassLoader classLoader;
+  private DependencyManager dependencyManager;
+
+  @Override
+  public void onLoad() {
+    config = new Configuration(getDataFolder());
+    classLoader = new ReflectionClassLoader(this);
+    dependencyManager = new DependencyManager(this);
+    dependencyManager.loadStorageDependencies(
+        EnumSet.of(StorageType.valueOf(config.getString("database.type").toUpperCase())));
+  }
 
   @Override
   public void onEnable() {
     Log4jFiltering.setup();
     long start = System.currentTimeMillis();
-    storage = new Storage(getDataFolder());
-    config = new Configuration(getDataFolder());
+    Executor executor =
+        (command) -> Bukkit.getScheduler().runTaskAsynchronously(SimpleRegister.this, command);
+    storage = new Storage(this, executor);
+    storage.connect();
     spawn = new SpawnYAML(getDataFolder());
     sessionHandler = new PlayerSessionHandler();
 
@@ -35,6 +55,11 @@ public final class SimpleRegister extends JavaPlugin {
 
     long end = System.currentTimeMillis() - start;
     getLogger().info("Enabled! Took " + end + " ms");
+  }
+
+  @Override
+  public void onDisable() {
+    storage.close();
   }
 
   private void registerCommands() {
@@ -67,5 +92,13 @@ public final class SimpleRegister extends JavaPlugin {
 
   public PlayerSessionHandler getSessionHandler() {
     return sessionHandler;
+  }
+
+  public PluginClassLoader getPluginClassLoader() {
+    return classLoader;
+  }
+
+  public DependencyManager getDependencyManager() {
+    return dependencyManager;
   }
 }

@@ -1,102 +1,112 @@
 package com.mrivanplays.simpleregister.storage;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Reader;
-import java.io.Writer;
-import java.lang.reflect.Type;
-import java.util.ArrayList;
+import com.mrivanplays.simpleregister.DatabaseCredentials;
+import com.mrivanplays.simpleregister.SimpleRegister;
+import com.mrivanplays.simpleregister.storage.flatfile.FlatfileStorage;
+import com.mrivanplays.simpleregister.storage.sql.SQLStorageImplementation;
+import com.mrivanplays.simpleregister.storage.sql.factory.connection.MariaDBConnectionFactory;
+import com.mrivanplays.simpleregister.storage.sql.factory.connection.MySQLConnectionFactory;
+import com.mrivanplays.simpleregister.storage.sql.factory.connection.PostgreSQLConnectionFactory;
+import com.mrivanplays.simpleregister.storage.sql.factory.flatfile.H2ConnectionFactory;
+import com.mrivanplays.simpleregister.storage.sql.factory.flatfile.SQLiteConnectionFactory;
+import com.mrivanplays.simpleregister.util.ThrowableRunnable;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.Executor;
 
 public class Storage {
 
-  private File file;
-  private Gson gson;
-  private Type listType;
+  private SimpleRegister plugin;
+  private Executor executor;
+  private StorageImplementation provider;
 
-  public Storage(File dataFolder) {
-    this.listType = new TypeToken<List<PasswordEntry>>() {}.getType();
-    this.file = new File(dataFolder, "passwords.json");
-    createFileIfNotExists();
-    this.gson = new GsonBuilder().serializeNulls().create();
+  public Storage(SimpleRegister plugin, Executor executor) {
+    this.plugin = plugin;
+    this.executor = executor;
+    provider = supplyDrop();
   }
 
-  public List<PasswordEntry> getPasswords() {
-    List<PasswordEntry> entries = new ArrayList<>();
-    try (Reader reader = new FileReader(file)) {
-      List<PasswordEntry> list = gson.fromJson(reader, listType);
-      if (list == null) {
-        return entries;
-      }
-      entries = list;
-    } catch (IOException ignored) {
-    }
-    return entries;
+  public void connect() {
+    provider.connect();
   }
 
-  public void addPassword(PasswordEntry entry) {
-    List<PasswordEntry> passwords = getPasswords();
-    passwords.add(entry);
-    write(passwords);
+  public void close() {
+    provider.close();
   }
 
-  public PasswordEntry getPasswordEntry(UUID uuid) {
-    return getPasswords().stream()
-        .filter(entry -> entry.getPlayerUUID().equals(uuid))
-        .findFirst()
-        .orElse(null);
+  public CompletableFuture<Void> addPassword(PasswordEntry entry) {
+    return makeFuture(() -> provider.addPassword(entry));
   }
 
-  public List<PasswordEntry> getAltAccounts(String ip) {
-    return getPasswords().stream()
-        .filter(entry -> entry.getPlayerIP().equalsIgnoreCase(ip))
-        .collect(Collectors.toList());
+  public CompletableFuture<List<PasswordEntry>> getPasswords() {
+    return makeFuture(() -> provider.getPasswords());
   }
 
-  public void modifyPassword(UUID owner, PasswordEntry passwordEntry) {
-    List<PasswordEntry> passwords = getPasswords();
-    passwords.replaceAll(
-        password -> {
-          if (password.getPlayerUUID().equals(owner)) {
-            return passwordEntry;
+  public CompletableFuture<PasswordEntry> getPasswordEntry(UUID uuid) {
+    return makeFuture(() -> provider.getPasswordEntry(uuid));
+  }
+
+  public CompletableFuture<List<PasswordEntry>> getAltAccounts(String ip) {
+    return makeFuture(() -> provider.getAltAccounts(ip));
+  }
+
+  public CompletableFuture<Void> modifyPassword(UUID uuid, PasswordEntry entry) {
+    return makeFuture(() -> provider.modifyPassword(uuid, entry));
+  }
+
+  public CompletableFuture<Void> removeEntry(UUID uuid) {
+    return makeFuture(() -> provider.removeEntry(uuid));
+  }
+
+  private <T> CompletableFuture<T> makeFuture(Callable<T> supplier) {
+    return CompletableFuture.supplyAsync(
+        () -> {
+          try {
+            return supplier.call();
+          } catch (Exception e) {
+            if (e instanceof RuntimeException) {
+              throw (RuntimeException) e;
+            }
+            throw new CompletionException(e);
           }
-          return password;
-        });
-    write(passwords);
+        },
+        executor);
   }
 
-  public void removeEntry(UUID uuid) {
-    List<PasswordEntry> passwords = getPasswords();
-    passwords.removeIf(entry -> entry.getPlayerUUID().equals(uuid));
-    write(passwords);
+  private CompletableFuture<Void> makeFuture(ThrowableRunnable runnable) {
+    return CompletableFuture.runAsync(
+        () -> {
+          try {
+            runnable.run();
+          } catch (Exception e) {
+            if (e instanceof RuntimeException) {
+              throw (RuntimeException) e;
+            }
+            throw new CompletionException(e);
+          }
+        },
+        executor);
   }
 
-  private void write(List<PasswordEntry> entries) {
-    file.delete();
-    createFileIfNotExists();
-    try (Writer writer = new FileWriter(file)) {
-      gson.toJson(entries, listType, writer);
-    } catch (IOException ignored) {
-    }
-  }
-
-  private void createFileIfNotExists() {
-    if (!file.exists()) {
-      if (!file.getParentFile().exists()) {
-        file.getParentFile().mkdirs();
-      }
-      try {
-        file.createNewFile();
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
+  private StorageImplementation supplyDrop() {
+    DatabaseCredentials credentials = new DatabaseCredentials(plugin.getConfiguration());
+    switch (StorageType.valueOf(
+        plugin.getConfiguration().getString("database.type").toUpperCase())) {
+      case H2:
+        return new SQLStorageImplementation(new H2ConnectionFactory(plugin));
+      case MYSQL:
+        return new SQLStorageImplementation(new MySQLConnectionFactory(credentials));
+      case SQLITE:
+        return new SQLStorageImplementation(new SQLiteConnectionFactory(plugin));
+      case MARIADB:
+        return new SQLStorageImplementation(new MariaDBConnectionFactory(credentials));
+      case POSTGRESQL:
+        return new SQLStorageImplementation(new PostgreSQLConnectionFactory(credentials));
+      default:
+        return new FlatfileStorage(plugin.getDataFolder());
     }
   }
 }

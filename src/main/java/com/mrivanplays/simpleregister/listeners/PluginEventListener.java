@@ -43,7 +43,7 @@ public class PluginEventListener implements Listener {
           task.cancel();
           return;
         }
-        PasswordEntry entry = plugin.getStorage().getPasswordEntry(event.getPlayer().getUniqueId());
+        PasswordEntry entry = plugin.getStorage().getPasswordEntry(event.getPlayer().getUniqueId()).join();
         if (entry == null) {
           event
               .getPlayer()

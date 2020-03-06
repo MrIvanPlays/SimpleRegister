@@ -34,7 +34,7 @@ public class CommandLogin implements CommandExecutor {
     }
 
     String password = args[0];
-    PasswordEntry entry = plugin.getStorage().getPasswordEntry(player.getUniqueId());
+    PasswordEntry entry = plugin.getStorage().getPasswordEntry(player.getUniqueId()).join();
     if (entry == null) {
       player.sendMessage(plugin.getConfiguration().getString("messages.have_to_register_first"));
       return true;

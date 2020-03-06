@@ -98,6 +98,30 @@
                   <pattern>at.favre.lib.bytes</pattern>
                   <shadedPattern>com.mrivanplays.simpleregister.libs.bytes</shadedPattern>
                 </relocation>
+                <relocation>
+                  <pattern>com.zaxxer.hikari</pattern>
+                  <shadedPattern>com.mrivanplays.networkbans.libs.hikari</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.mariadb.jdbc</pattern>
+                  <shadedPattern>com.mrivanplays.networkbans.libs.mariadb</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>com.mysql</pattern>
+                  <shadedPattern>com.mrivanplays.networkbans.libs.mysql</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.postgresql</pattern>
+                  <shadedPattern>com.mrivanplays.networkbans.libs.postgresql</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.bson</pattern>
+                  <shadedPattern>com.mrivanplays.networkbans.libs.bson</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>com.mongodb</pattern>
+                  <shadedPattern>com.mrivanplays.networkbans.libs.mongodb</shadedPattern>
+                </relocation>
               </relocations>
               <filters>
                 <filter>
@@ -161,6 +185,12 @@
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-core</artifactId>
       <version>2.5</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.zaxxer</groupId>
+      <artifactId>HikariCP</artifactId>
+      <version>3.4.2</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>

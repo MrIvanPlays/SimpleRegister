@@ -30,7 +30,7 @@ public class CommandRegister implements CommandExecutor {
       return true;
     }
     String ip = player.getAddress().getAddress().getHostName();
-    List<PasswordEntry> accounts = plugin.getStorage().getAltAccounts(ip);
+    List<PasswordEntry> accounts = plugin.getStorage().getAltAccounts(ip).join();
     if (accounts.size() == plugin.getConfiguration().getInt("max_accounts_allowed")) {
       player.kickPlayer(plugin.getConfiguration().getString("messages.max_accounts_exceeded"));
       return true;
@@ -49,7 +49,8 @@ public class CommandRegister implements CommandExecutor {
     }
 
     String hashedPassword = BCrypt.withDefaults().hashToString(12, password.toCharArray());
-    PasswordEntry entry = new PasswordEntry(player.getUniqueId(), ip, hashedPassword);
+    PasswordEntry entry =
+        new PasswordEntry(player.getName(), player.getUniqueId(), ip, hashedPassword);
     plugin.getStorage().addPassword(entry);
 
     plugin.getSessionHandler().addLoggedIn(player.getUniqueId());

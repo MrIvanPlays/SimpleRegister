@@ -55,6 +55,7 @@ public class SimpleRegisterCommands implements TabExecutor {
             .getStorage()
             .addPassword(
                 new PasswordEntry(
+                    args[1],
                     player.getUniqueId(),
                     null,
                     BCrypt.withDefaults().hashToString(12, password.toCharArray())));
@@ -67,7 +68,7 @@ public class SimpleRegisterCommands implements TabExecutor {
         }
 
         OfflinePlayer cpPlayer = Bukkit.getOfflinePlayer(args[1]);
-        PasswordEntry entry = plugin.getStorage().getPasswordEntry(cpPlayer.getUniqueId());
+        PasswordEntry entry = plugin.getStorage().getPasswordEntry(cpPlayer.getUniqueId()).join();
         if (entry == null) {
           sender.sendMessage("Cannot change a password of unregistered user");
           return true;
@@ -77,6 +78,7 @@ public class SimpleRegisterCommands implements TabExecutor {
 
         PasswordEntry newEntry =
             new PasswordEntry(
+                args[1],
                 cpPlayer.getUniqueId(),
                 entry.getPlayerIP(),
                 BCrypt.withDefaults().hashToString(12, cpPassword.toCharArray()));
@@ -91,7 +93,7 @@ public class SimpleRegisterCommands implements TabExecutor {
         }
 
         OfflinePlayer vaPlayer = Bukkit.getOfflinePlayer(args[1]);
-        PasswordEntry passwordEntry = plugin.getStorage().getPasswordEntry(vaPlayer.getUniqueId());
+        PasswordEntry passwordEntry = plugin.getStorage().getPasswordEntry(vaPlayer.getUniqueId()).join();
         if (passwordEntry == null) {
           sender.sendMessage("The specified player isn't registered. We cannot lookup for alts.");
           return true;
@@ -102,7 +104,7 @@ public class SimpleRegisterCommands implements TabExecutor {
           return true;
         }
 
-        List<PasswordEntry> alts = plugin.getStorage().getAltAccounts(passwordEntry.getPlayerIP());
+        List<PasswordEntry> alts = plugin.getStorage().getAltAccounts(passwordEntry.getPlayerIP()).join();
         alts.removeIf(e -> e.getPlayerUUID().equals(vaPlayer.getUniqueId()));
 
         if (alts.isEmpty()) {
@@ -125,7 +127,7 @@ public class SimpleRegisterCommands implements TabExecutor {
         }
 
         OfflinePlayer uPlayer = Bukkit.getOfflinePlayer(args[1]);
-        PasswordEntry pEntry = plugin.getStorage().getPasswordEntry(uPlayer.getUniqueId());
+        PasswordEntry pEntry = plugin.getStorage().getPasswordEntry(uPlayer.getUniqueId()).join();
         if (pEntry == null) {
           sender.sendMessage("Cannot unregister a non-registered user.");
           return true;
