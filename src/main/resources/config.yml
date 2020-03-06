@@ -17,6 +17,25 @@ max_accounts_allowed: 2
 # Should we teleport the player every time to the set spawn or not
 forceSpawnTeleport: true
 
+# Storage settings
+database:
+  # Database type. By default it's h2
+  # Supported databases: mysql, mariadb, h2, sqlite, flatfile, postgresql
+  # If you are using h2, sqlite or flatfile no further configuration is required
+  type: h2
+
+  # Login credentials
+  username: root
+  password: ""
+
+  # Name of the database
+  name: minecraft
+
+  # Connection data
+  ip: localhost
+  # Port of the connection
+  port: 3306
+
 # All configurable messages
 messages:
   register_message: "&eYou have to register before playing into our server! /register <password> <confirmPassword>"
