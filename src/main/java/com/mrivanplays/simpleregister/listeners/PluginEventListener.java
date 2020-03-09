@@ -1,6 +1,7 @@
 package com.mrivanplays.simpleregister.listeners;
 
 import com.mrivanplays.simpleregister.SimpleRegister;
+import org.bukkit.Location;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -22,6 +23,7 @@ public class PluginEventListener implements Listener {
 
   @EventHandler
   public void onJoin(PlayerJoinEvent event) {
+    Location oldLocation = event.getPlayer().getLocation();
     if (plugin.getConfiguration().getBoolean("forceSpawnTeleport")
         && plugin.getSpawn().getLocation() != null) {
       event.getPlayer().teleport(plugin.getSpawn().getLocation());
@@ -39,6 +41,7 @@ public class PluginEventListener implements Listener {
       @Override
       public void run() {
         if (plugin.getSessionHandler().hasLoggedIn(event.getPlayer().getUniqueId())) {
+          event.getPlayer().teleport(oldLocation);
           task.cancel();
           return;
         }
@@ -60,6 +63,7 @@ public class PluginEventListener implements Listener {
                   int delay = plugin.getConfiguration().getInt("spam_each_seconds");
                   secondsPassed = secondsPassed + delay;
                   if (secondsPassed == plugin.getConfiguration().getInt("kick_at_seconds")) {
+                    event.getPlayer().teleport(oldLocation);
                     task.cancel();
                     event
                         .getPlayer()
@@ -101,9 +105,11 @@ public class PluginEventListener implements Listener {
     }
     if (!plugin.getConfiguration().getBoolean("allowMovement")) {
       event.setCancelled(true);
-      event
-          .getPlayer()
-          .sendMessage(plugin.getConfiguration().getString("messages.have_to_be_logged_in"));
+      if (plugin.getConfiguration().getBoolean("send_message_while_trying_move")) {
+        event
+            .getPlayer()
+            .sendMessage(plugin.getConfiguration().getString("messages.have_to_be_logged_in"));
+      }
     }
   }
 

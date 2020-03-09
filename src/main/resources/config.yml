@@ -14,6 +14,9 @@ allowItemDrop: false
 # Max accounts allowed per IP addressalready_registered
 max_accounts_allowed: 2
 
+# Should we send message when the player is trying to move
+send_message_while_trying_move: true
+
 # Should we teleport the player every time to the set spawn or not
 forceSpawnTeleport: true
 

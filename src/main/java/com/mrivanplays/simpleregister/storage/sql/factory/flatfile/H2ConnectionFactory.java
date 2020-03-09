@@ -47,11 +47,16 @@ public class H2ConnectionFactory implements SQLConnectionFactory {
 
   @Override
   public Connection getConnection() throws SQLException {
+    if (connection == null || connection.isClosed()) {
+      connection = driver.connect("jdbc:h2:" + file.toString(), new Properties());
+    }
     return connection;
   }
 
   @Override
   public void close() throws SQLException {
-    connection.close();
+    if (connection != null && !connection.isClosed()) {
+      connection.close();
+    }
   }
 }

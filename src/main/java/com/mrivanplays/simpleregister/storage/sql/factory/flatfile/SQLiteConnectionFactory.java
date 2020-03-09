@@ -61,12 +61,31 @@ public class SQLiteConnectionFactory implements SQLConnectionFactory {
 
   @Override
   public Connection getConnection() throws SQLException {
+    if (connection == null || connection.isClosed()) {
+      try {
+        this.connection =
+            (Connection)
+                createConnectionMethod.invoke(
+                    null,
+                    "jdbc:sqlite:" + file.getAbsoluteFile().toPath().toString(),
+                    new Properties());
+      } catch (IllegalAccessException e) {
+        e.printStackTrace();
+      } catch (InvocationTargetException e) {
+        if (e.getCause() instanceof SQLException) {
+          throw (SQLException) e.getCause();
+        }
+        e.printStackTrace();
+      }
+    }
     return connection;
   }
 
   @Override
   public void close() throws SQLException {
-    connection.close();
+    if (connection != null && !connection.isClosed()) {
+      connection.close();
+    }
   }
 
   private void createFileIfNotExists() {
