@@ -34,14 +34,14 @@ public class PluginEventListener implements Listener {
           plugin
               .getServer()
               .getScheduler()
-              .runTaskTimer(
+              .runTaskTimerAsynchronously(
                   plugin, this, 0, plugin.getConfiguration().getInt("spam_each_seconds") * 20);
       int secondsPassed;
 
       @Override
       public void run() {
         if (plugin.getSessionHandler().hasLoggedIn(event.getPlayer().getUniqueId())) {
-          event.getPlayer().teleport(oldLocation);
+          plugin.getServer().getScheduler().runTask(plugin, () -> event.getPlayer().teleport(oldLocation));
           task.cancel();
           return;
         }
@@ -63,7 +63,7 @@ public class PluginEventListener implements Listener {
                   int delay = plugin.getConfiguration().getInt("spam_each_seconds");
                   secondsPassed = secondsPassed + delay;
                   if (secondsPassed == plugin.getConfiguration().getInt("kick_at_seconds")) {
-                    event.getPlayer().teleport(oldLocation);
+                    plugin.getServer().getScheduler().runTask(plugin, () -> event.getPlayer().teleport(oldLocation));
                     task.cancel();
                     event
                         .getPlayer()
