@@ -14,5 +14,9 @@ commands:
     aliases: [l]
   register:
     description: Register command
+    aliases: [reg]
   unregister:
     description: Unregisters the user who have ran the command
+  changepassword:
+    description: Changes the password
+    aliases: [cp]

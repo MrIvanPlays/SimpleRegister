@@ -1,8 +1,8 @@
 package com.mrivanplays.simpleregister.commands;
 
-import at.favre.lib.crypto.bcrypt.BCrypt;
 import com.mrivanplays.simpleregister.SimpleRegister;
 import com.mrivanplays.simpleregister.storage.PasswordEntry;
+import com.mrivanplays.simpleregister.util.PasswordEncryptionUtil;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -65,8 +65,7 @@ public class CommandRegister implements CommandExecutor {
                           return;
                         }
 
-                        String hashedPassword =
-                            BCrypt.withDefaults().hashToString(12, password.toCharArray());
+                        String hashedPassword = PasswordEncryptionUtil.hash(password);
                         PasswordEntry newEntry =
                             new PasswordEntry(
                                 player.getName(), player.getUniqueId(), ip, hashedPassword);

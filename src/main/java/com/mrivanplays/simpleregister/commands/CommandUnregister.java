@@ -1,7 +1,7 @@
 package com.mrivanplays.simpleregister.commands;
 
-import at.favre.lib.crypto.bcrypt.BCrypt;
 import com.mrivanplays.simpleregister.SimpleRegister;
+import com.mrivanplays.simpleregister.util.PasswordEncryptionUtil;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -34,10 +34,7 @@ public class CommandUnregister implements CommandExecutor {
           .getPasswordEntry(
               player.getUniqueId(),
               pwEntry -> {
-                BCrypt.Result result =
-                    BCrypt.verifyer()
-                        .verify(password.toCharArray(), pwEntry.getPassword().toCharArray());
-                if (result.verified) {
+                if (PasswordEncryptionUtil.verifyPasswords(password, pwEntry.getPassword())) {
                   plugin.getStorage().removeEntry(player.getUniqueId());
 
                   player.kickPlayer(

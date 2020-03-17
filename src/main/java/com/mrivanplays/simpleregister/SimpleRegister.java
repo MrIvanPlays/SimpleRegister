@@ -3,6 +3,7 @@ package com.mrivanplays.simpleregister;
 import co.aikar.taskchain.BukkitTaskChainFactory;
 import co.aikar.taskchain.TaskChain;
 import co.aikar.taskchain.TaskChainFactory;
+import com.mrivanplays.simpleregister.commands.CommandChangePassword;
 import com.mrivanplays.simpleregister.commands.CommandLogin;
 import com.mrivanplays.simpleregister.commands.CommandRegister;
 import com.mrivanplays.simpleregister.commands.CommandUnregister;
@@ -78,6 +79,8 @@ public final class SimpleRegister extends JavaPlugin {
     getCommand("register").setTabCompleter(EMPTY);
     getCommand("unregister").setExecutor(new CommandUnregister(this));
     getCommand("unregister").setTabCompleter(EMPTY);
+    getCommand("changepassword").setExecutor(new CommandChangePassword(this));
+    getCommand("changepassword").setTabCompleter(EMPTY);
   }
 
   public Storage getStorage() {

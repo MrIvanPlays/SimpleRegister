@@ -1,8 +1,8 @@
 package com.mrivanplays.simpleregister.commands;
 
-import at.favre.lib.crypto.bcrypt.BCrypt;
 import com.mrivanplays.simpleregister.SimpleRegister;
 import com.mrivanplays.simpleregister.storage.PasswordEntry;
+import com.mrivanplays.simpleregister.util.PasswordEncryptionUtil;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -55,10 +55,7 @@ public class SimpleRegisterCommands implements TabExecutor {
             .getStorage()
             .addPassword(
                 new PasswordEntry(
-                    args[1],
-                    player.getUniqueId(),
-                    null,
-                    BCrypt.withDefaults().hashToString(12, password.toCharArray())));
+                    args[1], player.getUniqueId(), null, PasswordEncryptionUtil.hash(password)));
         sender.sendMessage("Player registered successfully");
         break;
       case "changepassword":
@@ -85,7 +82,7 @@ public class SimpleRegisterCommands implements TabExecutor {
                           args[1],
                           cpPlayer.getUniqueId(),
                           entry.getPlayerIP(),
-                          BCrypt.withDefaults().hashToString(12, cpPassword.toCharArray()));
+                          PasswordEncryptionUtil.hash(cpPassword));
 
                   plugin.getStorage().modifyPassword(cpPlayer.getUniqueId(), newEntry);
                   sender.sendMessage("Password changed successfully");
