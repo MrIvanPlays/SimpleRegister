@@ -1,5 +1,6 @@
 package com.mrivanplays.simpleregister.storage.sql;
 
+import com.mrivanplays.simpleregister.SimpleRegister;
 import com.mrivanplays.simpleregister.storage.PasswordEntry;
 import com.mrivanplays.simpleregister.storage.StorageImplementation;
 import com.mrivanplays.simpleregister.storage.StorageType;
@@ -20,10 +21,13 @@ public class SQLStorageImplementation implements StorageImplementation {
 
   private SQLConnectionFactory connectionFactory;
   private StorageType storageType;
+  private SimpleRegister plugin;
 
-  public SQLStorageImplementation(SQLConnectionFactory connectionFactory, StorageType storageType) {
+  public SQLStorageImplementation(
+      SQLConnectionFactory connectionFactory, StorageType storageType, SimpleRegister plugin) {
     this.connectionFactory = connectionFactory;
     this.storageType = storageType;
+    this.plugin = plugin;
   }
 
   @Override
@@ -34,12 +38,10 @@ public class SQLStorageImplementation implements StorageImplementation {
         boolean tableExists = tableExists(connection, "simpleregister_passwords");
         if (!tableExists) {
           try (InputStream in =
-              getClass()
-                  .getClassLoader()
-                  .getResourceAsStream(
-                      "com/mrivanplays/simpleregister/sql/schema/"
-                          + storageType.name().toLowerCase()
-                          + ".sql")) {
+              plugin.getResource(
+                  "com/mrivanplays/simpleregister/sql/schema/"
+                      + storageType.name().toLowerCase()
+                      + ".sql")) {
             boolean utf8mb4Unsupported = false;
             List<String> queries = SchemaReader.getStatements(in);
             try (Statement s = connection.createStatement()) {

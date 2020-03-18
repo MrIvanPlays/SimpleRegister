@@ -87,16 +87,19 @@ public class Storage {
         StorageType.valueOf(plugin.getConfiguration().getString("database.type").toUpperCase());
     switch (storageType) {
       case H2:
-        return new SQLStorageImplementation(new H2ConnectionFactory(plugin), storageType);
+        return new SQLStorageImplementation(new H2ConnectionFactory(plugin), storageType, plugin);
       case MYSQL:
-        return new SQLStorageImplementation(new MySQLConnectionFactory(credentials), storageType);
+        return new SQLStorageImplementation(
+            new MySQLConnectionFactory(credentials), storageType, plugin);
       case SQLITE:
-        return new SQLStorageImplementation(new SQLiteConnectionFactory(plugin), storageType);
+        return new SQLStorageImplementation(
+            new SQLiteConnectionFactory(plugin), storageType, plugin);
       case MARIADB:
-        return new SQLStorageImplementation(new MariaDBConnectionFactory(credentials), storageType);
+        return new SQLStorageImplementation(
+            new MariaDBConnectionFactory(credentials), storageType, plugin);
       case POSTGRESQL:
         return new SQLStorageImplementation(
-            new PostgreSQLConnectionFactory(credentials), storageType);
+            new PostgreSQLConnectionFactory(credentials), storageType, plugin);
       default:
         return new FlatfileStorage(plugin.getDataFolder());
     }
