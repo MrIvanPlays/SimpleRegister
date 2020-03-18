@@ -39,7 +39,7 @@ public class SQLStorageImplementation implements StorageImplementation {
         if (!tableExists) {
           try (InputStream in =
               plugin.getResource(
-                  "com/mrivanplays/simpleregister/sql/schema/"
+                  "com/mrivanplays/simpleregister/sql/schemas/"
                       + storageType.name().toLowerCase()
                       + ".sql")) {
             boolean utf8mb4Unsupported = false;
