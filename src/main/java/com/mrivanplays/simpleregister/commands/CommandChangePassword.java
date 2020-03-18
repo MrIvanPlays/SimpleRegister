@@ -47,12 +47,13 @@ public class CommandChangePassword implements CommandExecutor {
                   .modifyPassword(
                       player.getUniqueId(),
                       new PasswordEntry(
+                          entry.getId(),
                           entry.getName(),
                           entry.getPlayerUUID(),
                           entry.getPlayerIP(),
                           PasswordEncryptionUtil.hash(newPassword)));
 
-              player.sendMessage(plugin.getConfiguration().getString("messages."));
+              player.sendMessage(plugin.getConfiguration().getString("messages.password_changed_successfully"));
             });
     return true;
   }

@@ -55,6 +55,7 @@ public class SimpleRegisterCommands implements TabExecutor {
             .getStorage()
             .addPassword(
                 new PasswordEntry(
+                    0, // as I said in CommandRegister - doesn't matter
                     args[1], player.getUniqueId(), null, PasswordEncryptionUtil.hash(password)));
         sender.sendMessage("Player registered successfully");
         break;
@@ -79,6 +80,7 @@ public class SimpleRegisterCommands implements TabExecutor {
 
                   PasswordEntry newEntry =
                       new PasswordEntry(
+                          entry.getId(),
                           args[1],
                           cpPlayer.getUniqueId(),
                           entry.getPlayerIP(),

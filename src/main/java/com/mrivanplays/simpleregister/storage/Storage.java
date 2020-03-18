@@ -83,18 +83,20 @@ public class Storage {
 
   private StorageImplementation supplyDrop() {
     DatabaseCredentials credentials = new DatabaseCredentials(plugin.getConfiguration());
-    switch (StorageType.valueOf(
-        plugin.getConfiguration().getString("database.type").toUpperCase())) {
+    StorageType storageType =
+        StorageType.valueOf(plugin.getConfiguration().getString("database.type").toUpperCase());
+    switch (storageType) {
       case H2:
-        return new SQLStorageImplementation(new H2ConnectionFactory(plugin));
+        return new SQLStorageImplementation(new H2ConnectionFactory(plugin), storageType);
       case MYSQL:
-        return new SQLStorageImplementation(new MySQLConnectionFactory(credentials));
+        return new SQLStorageImplementation(new MySQLConnectionFactory(credentials), storageType);
       case SQLITE:
-        return new SQLStorageImplementation(new SQLiteConnectionFactory(plugin));
+        return new SQLStorageImplementation(new SQLiteConnectionFactory(plugin), storageType);
       case MARIADB:
-        return new SQLStorageImplementation(new MariaDBConnectionFactory(credentials));
+        return new SQLStorageImplementation(new MariaDBConnectionFactory(credentials), storageType);
       case POSTGRESQL:
-        return new SQLStorageImplementation(new PostgreSQLConnectionFactory(credentials));
+        return new SQLStorageImplementation(
+            new PostgreSQLConnectionFactory(credentials), storageType);
       default:
         return new FlatfileStorage(plugin.getDataFolder());
     }

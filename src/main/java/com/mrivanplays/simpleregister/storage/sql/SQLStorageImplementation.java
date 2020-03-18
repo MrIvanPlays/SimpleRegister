@@ -2,11 +2,16 @@ package com.mrivanplays.simpleregister.storage.sql;
 
 import com.mrivanplays.simpleregister.storage.PasswordEntry;
 import com.mrivanplays.simpleregister.storage.StorageImplementation;
+import com.mrivanplays.simpleregister.storage.StorageType;
 import com.mrivanplays.simpleregister.storage.sql.factory.SQLConnectionFactory;
+import java.io.IOException;
+import java.io.InputStream;
+import java.sql.BatchUpdateException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -14,9 +19,11 @@ import java.util.UUID;
 public class SQLStorageImplementation implements StorageImplementation {
 
   private SQLConnectionFactory connectionFactory;
+  private StorageType storageType;
 
-  public SQLStorageImplementation(SQLConnectionFactory connectionFactory) {
+  public SQLStorageImplementation(SQLConnectionFactory connectionFactory, StorageType storageType) {
     this.connectionFactory = connectionFactory;
+    this.storageType = storageType;
   }
 
   @Override
@@ -24,13 +31,46 @@ public class SQLStorageImplementation implements StorageImplementation {
     try {
       connectionFactory.connect();
       try (Connection connection = connectionFactory.getConnection()) {
-        try (PreparedStatement statement =
-            connection.prepareStatement(
-                "CREATE TABLE IF NOT EXISTS simpleregister_passwords(name VARCHAR(255), uuid VARCHAR(255), ip VARCHAR(255), password VARCHAR(255));")) {
-          statement.executeUpdate();
+        boolean tableExists = tableExists(connection, "simpleregister_passwords");
+        if (!tableExists) {
+          try (InputStream in =
+              getClass()
+                  .getClassLoader()
+                  .getResourceAsStream(
+                      "com/mrivanplays/simpleregister/sql/schema/"
+                          + storageType.name().toLowerCase()
+                          + ".sql")) {
+            boolean utf8mb4Unsupported = false;
+            List<String> queries = SchemaReader.getStatements(in);
+            try (Statement s = connection.createStatement()) {
+              for (String query : queries) {
+                s.addBatch(query);
+              }
+
+              try {
+                s.executeBatch();
+              } catch (BatchUpdateException e) {
+                if (e.getMessage().contains("Unknown character set")) {
+                  utf8mb4Unsupported = true;
+                } else {
+                  throw e;
+                }
+              }
+            }
+
+            if (utf8mb4Unsupported) {
+              try (Statement s = connection.createStatement()) {
+                for (String query : queries) {
+                  s.addBatch(query.replace("utf8mb4", "utf8"));
+                }
+
+                s.executeBatch();
+              }
+            }
+          }
         }
       }
-    } catch (SQLException e) {
+    } catch (IOException | SQLException e) {
       e.printStackTrace();
     }
   }
@@ -46,6 +86,7 @@ public class SQLStorageImplementation implements StorageImplementation {
             while (result.next()) {
               entries.add(
                   new PasswordEntry(
+                      result.getInt("id"),
                       result.getString("name"),
                       UUID.fromString(result.getString("uuid")),
                       result.getString("ip"),
@@ -83,7 +124,9 @@ public class SQLStorageImplementation implements StorageImplementation {
   public void modifyPassword(UUID owner, PasswordEntry entry) {
     try {
       try (Connection connection = connectionFactory.getConnection()) {
-        try (PreparedStatement statement = connection.prepareStatement("UPDATE simpleregister_passwords SET password = ? WHERE uuid = ?")) {
+        try (PreparedStatement statement =
+            connection.prepareStatement(
+                "UPDATE simpleregister_passwords SET password = ? WHERE uuid = ?")) {
           statement.setString(1, entry.getPassword());
           statement.setString(2, owner.toString());
           statement.executeUpdate();
@@ -98,7 +141,8 @@ public class SQLStorageImplementation implements StorageImplementation {
   public void removeEntry(UUID owner) {
     try {
       try (Connection connection = connectionFactory.getConnection()) {
-        try (PreparedStatement statement = connection.prepareStatement("DELETE FROM simpleregister_passwords WHERE uuid = ?")) {
+        try (PreparedStatement statement =
+            connection.prepareStatement("DELETE FROM simpleregister_passwords WHERE uuid = ?")) {
           statement.setString(1, owner.toString());
           statement.executeUpdate();
         }
@@ -114,6 +158,17 @@ public class SQLStorageImplementation implements StorageImplementation {
       connectionFactory.close();
     } catch (SQLException e) {
       e.printStackTrace();
+    }
+  }
+
+  private static boolean tableExists(Connection connection, String table) throws SQLException {
+    try (ResultSet rs = connection.getMetaData().getTables(null, null, "%", null)) {
+      while (rs.next()) {
+        if (rs.getString(3).equalsIgnoreCase(table)) {
+          return true;
+        }
+      }
+      return false;
     }
   }
 }

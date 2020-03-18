@@ -68,7 +68,12 @@ public class CommandRegister implements CommandExecutor {
                         String hashedPassword = PasswordEncryptionUtil.hash(password);
                         PasswordEntry newEntry =
                             new PasswordEntry(
-                                player.getName(), player.getUniqueId(), ip, hashedPassword);
+                                0, // doesn't matter as it is auto increment in sql and it is not
+                                   // used in flatfile
+                                player.getName(),
+                                player.getUniqueId(),
+                                ip,
+                                hashedPassword);
                         plugin.getStorage().addPassword(newEntry);
 
                         plugin.getSessionHandler().addLoggedIn(player.getUniqueId());
