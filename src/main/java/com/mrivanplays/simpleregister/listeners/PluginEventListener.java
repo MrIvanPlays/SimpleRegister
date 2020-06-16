@@ -2,6 +2,8 @@ package com.mrivanplays.simpleregister.listeners;
 
 import com.mrivanplays.simpleregister.SimpleRegister;
 import org.bukkit.Location;
+import org.bukkit.entity.HumanEntity;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -13,6 +15,7 @@ import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.scheduler.BukkitTask;
 
+// todo: Ivan, have you heard of single responcibility principle ????
 public class PluginEventListener implements Listener {
 
   private SimpleRegister plugin;
@@ -23,10 +26,11 @@ public class PluginEventListener implements Listener {
 
   @EventHandler
   public void onJoin(PlayerJoinEvent event) {
-    Location oldLocation = event.getPlayer().getLocation();
+    Player player = event.getPlayer();
+    Location oldLocation = player.getLocation();
     if (plugin.getConfiguration().getBoolean("forceSpawnTeleport")
         && plugin.getSpawn().getLocation() != null) {
-      event.getPlayer().teleport(plugin.getSpawn().getLocation());
+      player.teleport(plugin.getSpawn().getLocation());
     }
     new Runnable() {
 
@@ -40,34 +44,39 @@ public class PluginEventListener implements Listener {
 
       @Override
       public void run() {
-        if (plugin.getSessionHandler().hasLoggedIn(event.getPlayer().getUniqueId())) {
-          plugin.getServer().getScheduler().runTask(plugin, () -> event.getPlayer().teleport(oldLocation));
+        if (plugin.getSessionHandler().hasLoggedIn(player.getUniqueId())) {
+          plugin.getServer().getScheduler().runTask(plugin, () -> player.teleport(oldLocation));
           task.cancel();
           return;
         }
         plugin
             .getStorage()
             .getPasswordEntrySync(
-                event.getPlayer().getUniqueId(),
+                player.getUniqueId(),
                 entry -> {
                   if (entry == null) {
-                    event
-                        .getPlayer()
-                        .sendMessage(
-                            plugin.getConfiguration().getString("messages.register_message"));
+                    player.sendMessage(
+                        plugin.getConfiguration().getString("messages.register_message"));
                   } else {
-                    event
-                        .getPlayer()
-                        .sendMessage(plugin.getConfiguration().getString("messages.login_message"));
+                    player.sendMessage(
+                        plugin.getConfiguration().getString("messages.login_message"));
                   }
                   int delay = plugin.getConfiguration().getInt("spam_each_seconds");
                   secondsPassed = secondsPassed + delay;
                   if (secondsPassed == plugin.getConfiguration().getInt("kick_at_seconds")) {
-                    plugin.getServer().getScheduler().runTask(plugin, () -> event.getPlayer().teleport(oldLocation));
+                    plugin
+                        .getServer()
+                        .getScheduler()
+                        .runTask(plugin, () -> player.teleport(oldLocation));
                     task.cancel();
-                    event
-                        .getPlayer()
-                        .kickPlayer(plugin.getConfiguration().getString("messages.time_exceeded"));
+                    plugin
+                        .getServer()
+                        .getScheduler()
+                        .runTask(
+                            plugin,
+                            () ->
+                                player.kickPlayer(
+                                    plugin.getConfiguration().getString("messages.time_exceeded")));
                   }
                 });
       }
@@ -76,18 +85,17 @@ public class PluginEventListener implements Listener {
 
   @EventHandler
   public void onPreProcess(PlayerCommandPreprocessEvent event) {
+    Player player = event.getPlayer();
     String commandName = event.getMessage().split(" ")[0].replace("/", "");
     if (!commandName.equalsIgnoreCase("login")
         && !commandName.equalsIgnoreCase("l")
         && !commandName.equalsIgnoreCase("register")) {
-      if (plugin.getSessionHandler().hasLoggedIn(event.getPlayer().getUniqueId())) {
+      if (plugin.getSessionHandler().hasLoggedIn(player.getUniqueId())) {
         return;
       }
       if (!plugin.getConfiguration().getBoolean("allowOtherCommands")) {
         event.setCancelled(true);
-        event
-            .getPlayer()
-            .sendMessage(plugin.getConfiguration().getString(getMessageKey(commandName)));
+        player.sendMessage(plugin.getConfiguration().getString(getMessageKey(commandName)));
       }
     }
   }
@@ -100,56 +108,53 @@ public class PluginEventListener implements Listener {
 
   @EventHandler
   public void onMove(PlayerMoveEvent event) {
-    if (plugin.getSessionHandler().hasLoggedIn(event.getPlayer().getUniqueId())) {
+    Player player = event.getPlayer();
+    if (plugin.getSessionHandler().hasLoggedIn(player.getUniqueId())) {
       return;
     }
     if (!plugin.getConfiguration().getBoolean("allowMovement")) {
       event.setCancelled(true);
       if (plugin.getConfiguration().getBoolean("send_message_while_trying_move")) {
-        event
-            .getPlayer()
-            .sendMessage(plugin.getConfiguration().getString("messages.have_to_be_logged_in"));
+        player.sendMessage(plugin.getConfiguration().getString("messages.have_to_be_logged_in"));
       }
     }
   }
 
   @EventHandler
   public void onChat(AsyncPlayerChatEvent event) {
+    Player player = event.getPlayer();
     if (plugin.getSessionHandler().hasLoggedIn(event.getPlayer().getUniqueId())) {
       return;
     }
     if (!plugin.getConfiguration().getBoolean("allowChat")) {
       event.setCancelled(true);
-      event
-          .getPlayer()
-          .sendMessage(plugin.getConfiguration().getString("messages.have_to_be_logged_in"));
+      player.sendMessage(plugin.getConfiguration().getString("messages.have_to_be_logged_in"));
     }
   }
 
   @EventHandler
   public void onClick(InventoryClickEvent event) {
-    if (plugin.getSessionHandler().hasLoggedIn(event.getWhoClicked().getUniqueId())) {
+    // too lazy to cast
+    HumanEntity player = event.getWhoClicked();
+    if (plugin.getSessionHandler().hasLoggedIn(player.getUniqueId())) {
       return;
     }
     if (!plugin.getConfiguration().getBoolean("allowInventoryInteraction")) {
       event.setCancelled(true);
-      event.getWhoClicked().closeInventory();
-      event
-          .getWhoClicked()
-          .sendMessage(plugin.getConfiguration().getString("messages.have_to_be_logged_in"));
+      player.closeInventory();
+      player.sendMessage(plugin.getConfiguration().getString("messages.have_to_be_logged_in"));
     }
   }
 
   @EventHandler
   public void onDrop(PlayerDropItemEvent event) {
-    if (plugin.getSessionHandler().hasLoggedIn(event.getPlayer().getUniqueId())) {
+    Player player = event.getPlayer();
+    if (plugin.getSessionHandler().hasLoggedIn(player.getUniqueId())) {
       return;
     }
     if (!plugin.getConfiguration().getBoolean("allowItemDrop")) {
       event.setCancelled(true);
-      event
-          .getPlayer()
-          .sendMessage(plugin.getConfiguration().getString("messages.have_to_be_logged_in"));
+      player.sendMessage(plugin.getConfiguration().getString("messages.have_to_be_logged_in"));
     }
   }
 
