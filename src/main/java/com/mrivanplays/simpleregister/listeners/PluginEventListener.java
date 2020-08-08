@@ -1,6 +1,7 @@
 package com.mrivanplays.simpleregister.listeners;
 
 import com.mrivanplays.simpleregister.SimpleRegister;
+import io.papermc.lib.PaperLib;
 import org.bukkit.Location;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
@@ -30,7 +31,7 @@ public class PluginEventListener implements Listener {
     Location oldLocation = player.getLocation();
     if (plugin.getConfiguration().getBoolean("forceSpawnTeleport")
         && plugin.getSpawn().getLocation() != null) {
-      player.teleport(plugin.getSpawn().getLocation());
+      PaperLib.teleportAsync(player, plugin.getSpawn().getLocation());
     }
     new Runnable() {
 
@@ -45,7 +46,7 @@ public class PluginEventListener implements Listener {
       @Override
       public void run() {
         if (plugin.getSessionHandler().hasLoggedIn(player.getUniqueId())) {
-          plugin.getServer().getScheduler().runTask(plugin, () -> player.teleport(oldLocation));
+          plugin.getServer().getScheduler().runTask(plugin, () -> PaperLib.teleportAsync(player, oldLocation));
           task.cancel();
           return;
         }
@@ -67,7 +68,7 @@ public class PluginEventListener implements Listener {
                     plugin
                         .getServer()
                         .getScheduler()
-                        .runTask(plugin, () -> player.teleport(oldLocation));
+                        .runTask(plugin, () -> PaperLib.teleportAsync(player, oldLocation));
                     task.cancel();
                     plugin
                         .getServer()

@@ -118,6 +118,10 @@
                   <pattern>co.aikar.taskchain</pattern>
                   <shadedPattern>com.mrivanplays.simpleregister.libs.taskchain</shadedPattern>
                 </relocation>
+                <relocation>
+                  <pattern>io.papermc.lib</pattern>
+                  <shadedPattern>com.mrivanplays.simpleregister.libs.paperlib</shadedPattern>
+                </relocation>
               </relocations>
               <filters>
                 <filter>
@@ -167,6 +171,10 @@
       <id>aikar</id>
       <url>https://repo.aikar.co/content/groups/aikar/</url>
     </repository>
+    <repository>
+      <id>papermc</id>
+      <url>https://papermc.io/repo/repository/maven-public/</url>
+    </repository>
   </repositories>
 
   <dependencies>
@@ -197,6 +205,12 @@
       <groupId>co.aikar</groupId>
       <artifactId>taskchain-bukkit</artifactId>
       <version>3.7.2</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.papermc</groupId>
+      <artifactId>paperlib</artifactId>
+      <version>1.0.5</version>
       <scope>compile</scope>
     </dependency>
   </dependencies>
