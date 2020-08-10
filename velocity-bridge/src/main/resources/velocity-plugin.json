@@ -1,0 +1,1 @@
+{"id":"simpleregister-velocity","name":"SimpleRegister-Velocity","version":"${project.version}","authors":["MrIvanPlays"],"dependencies":[],"main":"com.mrivanplays.simpleregister.plugin.velocity.SimpleRegisterVelocity"}
