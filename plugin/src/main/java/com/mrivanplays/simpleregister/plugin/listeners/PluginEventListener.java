@@ -72,17 +72,11 @@ public class PluginEventListener implements Listener {
                                   } else {
                                     PaperLib.teleportAsync(player, oldLocation);
                                   }
+                                  player.kickPlayer(
+                                      plugin
+                                          .getConfiguration()
+                                          .getString("messages.time_exceeded"));
                                 });
-                        plugin
-                            .getServer()
-                            .getScheduler()
-                            .runTask(
-                                plugin,
-                                () ->
-                                    player.kickPlayer(
-                                        plugin
-                                            .getConfiguration()
-                                            .getString("messages.time_exceeded")));
                       }
                     });
           }
