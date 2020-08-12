@@ -1,9 +1,8 @@
 package com.mrivanplays.simpleregister.plugin.listeners;
 
-import co.aikar.taskchain.TaskChain;
 import com.mrivanplays.simpleregister.plugin.SimpleRegisterPlugin;
+import com.mrivanplays.simpleregister.plugin.TaskRegistry;
 import io.papermc.lib.PaperLib;
-import java.util.function.Consumer;
 import org.bukkit.Location;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
@@ -14,6 +13,7 @@ import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.scheduler.BukkitTask;
@@ -33,74 +33,67 @@ public class PluginEventListener implements Listener {
     Location oldLocation = player.getLocation();
     if (plugin.getConfiguration().getBoolean("forceSpawnTeleport")
         && plugin.getSpawn().getLocation() != null) {
-      PaperLib.teleportAsync(player, plugin.getSpawn().getLocation());
-    }
-    new Runnable() {
-
-      final BukkitTask task =
-          plugin
-              .getServer()
-              .getScheduler()
-              .runTaskTimerAsynchronously(
-                  plugin, this, 0, plugin.getConfiguration().getInt("spam_each_seconds") * 20);
-      int secondsPassed;
-
-      @Override
-      public void run() {
-        Consumer<Boolean> work =
-            (shouldCancelTask) -> {
-              if (shouldCancelTask) {
-                task.cancel();
-                return;
-              }
-              plugin
-                  .getStorage()
-                  .getPasswordEntrySync(
-                      player.getUniqueId(),
-                      entry -> {
-                        if (entry == null) {
-                          player.sendMessage(
-                              plugin.getConfiguration().getString("messages.register_message"));
-                        } else {
-                          player.sendMessage(
-                              plugin.getConfiguration().getString("messages.login_message"));
-                        }
-                        int delay = plugin.getConfiguration().getInt("spam_each_seconds");
-                        secondsPassed = secondsPassed + delay;
-                        if (secondsPassed == plugin.getConfiguration().getInt("kick_at_seconds")) {
-                          plugin
-                              .getServer()
-                              .getScheduler()
-                              .runTask(plugin, () -> PaperLib.teleportAsync(player, oldLocation));
-                          task.cancel();
-                          plugin
-                              .getServer()
-                              .getScheduler()
-                              .runTask(
-                                  plugin,
-                                  () ->
-                                      player.kickPlayer(
-                                          plugin
-                                              .getConfiguration()
-                                              .getString("messages.time_exceeded")));
-                        }
-                      });
-            };
-        TaskChain<?> chain = plugin.newChain();
-        chain
-            .sync(
-                () -> {
-                  if (plugin.getSessionHandler().hasLoggedIn(player.getUniqueId())) {
-                    PaperLib.teleportAsync(player, oldLocation);
-                    chain.setTaskData("stop", true);
-                    return;
-                  }
-                  chain.setTaskData("stop", false);
-                })
-            .async(() -> work.accept(chain.getTaskData("stop")))
-            .execute();
+      if (plugin.getConfig().getBoolean("syncTeleportation")) {
+        player.teleport(plugin.getSpawn().getLocation());
+      } else {
+        PaperLib.teleportAsync(player, plugin.getSpawn().getLocation());
       }
-    };
+    }
+    Runnable r =
+        new Runnable() {
+
+          int secondsPassed;
+
+          @Override
+          public void run() {
+            plugin
+                .getStorage()
+                .getPasswordEntry(
+                    player.getUniqueId(),
+                    entry -> {
+                      if (entry == null) {
+                        player.sendMessage(
+                            plugin.getConfiguration().getString("messages.register_message"));
+                      } else {
+                        player.sendMessage(
+                            plugin.getConfiguration().getString("messages.login_message"));
+                      }
+                      int delay = plugin.getConfiguration().getInt("spam_each_seconds");
+                      secondsPassed = secondsPassed + delay;
+                      if (secondsPassed == plugin.getConfiguration().getInt("kick_at_seconds")) {
+                        plugin
+                            .getServer()
+                            .getScheduler()
+                            .runTask(
+                                plugin,
+                                () -> {
+                                  if (plugin.getConfig().getBoolean("syncTeleportation")) {
+                                    player.teleport(oldLocation);
+                                  } else {
+                                    PaperLib.teleportAsync(player, oldLocation);
+                                  }
+                                });
+                        plugin
+                            .getServer()
+                            .getScheduler()
+                            .runTask(
+                                plugin,
+                                () ->
+                                    player.kickPlayer(
+                                        plugin
+                                            .getConfiguration()
+                                            .getString("messages.time_exceeded")));
+                      }
+                    });
+          }
+        };
+    BukkitTask task =
+        plugin
+            .getServer()
+            .getScheduler()
+            .runTaskTimerAsynchronously(
+                plugin, r, 0, plugin.getConfiguration().getInt("spam_each_seconds") * 20);
+    TaskRegistry.putTask(player.getUniqueId(), task);
   }
 
   @EventHandler
@@ -179,7 +172,14 @@ public class PluginEventListener implements Listener {
   }
 
   @EventHandler
+  public void onKick(PlayerKickEvent event) {
+    plugin.getSessionHandler().onQuit(event.getPlayer().getUniqueId());
+    TaskRegistry.cancelTask(event.getPlayer().getUniqueId());
+  }
+
+  @EventHandler
   public void onQuit(PlayerQuitEvent event) {
     plugin.getSessionHandler().onQuit(event.getPlayer().getUniqueId());
+    TaskRegistry.cancelTask(event.getPlayer().getUniqueId());
   }
 }

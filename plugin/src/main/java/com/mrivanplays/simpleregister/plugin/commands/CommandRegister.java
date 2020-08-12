@@ -3,6 +3,7 @@ package com.mrivanplays.simpleregister.plugin.commands;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 import com.mrivanplays.simpleregister.plugin.SimpleRegisterPlugin;
+import com.mrivanplays.simpleregister.plugin.TaskRegistry;
 import com.mrivanplays.simpleregister.plugin.storage.PasswordEntry;
 import com.mrivanplays.simpleregister.plugin.util.PasswordEncryptionUtil;
 import org.bukkit.command.Command;
@@ -78,6 +79,7 @@ public class CommandRegister implements CommandExecutor {
                                 hashedPassword);
                         plugin.getStorage().addPassword(newEntry);
 
+                        TaskRegistry.cancelTask(player.getUniqueId());
                         plugin.getSessionHandler().addLoggedIn(player.getUniqueId());
                         ByteArrayDataOutput out = ByteStreams.newDataOutput();
                         out.writeUTF("LoggedIn");
