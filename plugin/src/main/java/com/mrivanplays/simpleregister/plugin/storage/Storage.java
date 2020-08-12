@@ -1,6 +1,8 @@
 package com.mrivanplays.simpleregister.plugin.storage;
 
 import co.aikar.taskchain.TaskChain;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.mrivanplays.simpleregister.plugin.DatabaseCredentials;
 import com.mrivanplays.simpleregister.plugin.SimpleRegisterPlugin;
 import com.mrivanplays.simpleregister.plugin.storage.flatfile.FlatfileStorage;
@@ -10,8 +12,12 @@ import com.mrivanplays.simpleregister.plugin.storage.sql.factory.connection.MySQ
 import com.mrivanplays.simpleregister.plugin.storage.sql.factory.connection.PostgreSQLConnectionFactory;
 import com.mrivanplays.simpleregister.plugin.storage.sql.factory.flatfile.H2ConnectionFactory;
 import com.mrivanplays.simpleregister.plugin.storage.sql.factory.flatfile.SQLiteConnectionFactory;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 public class Storage {
@@ -19,9 +25,17 @@ public class Storage {
   private final SimpleRegisterPlugin plugin;
   private final StorageImplementation provider;
 
+  private Cache<UUID, PasswordEntry> cache =
+      CacheBuilder.newBuilder().expireAfterWrite(90, TimeUnit.SECONDS).build();
+  private Set<PasswordEntry> cachedAllPasswords = new HashSet<>();
+
   public Storage(SimpleRegisterPlugin plugin) {
     this.plugin = plugin;
     provider = supplyDrop();
+    plugin
+        .getServer()
+        .getScheduler()
+        .scheduleSyncRepeatingTask(plugin, () -> cachedAllPasswords.clear(), 600, 400); // 20s
   }
 
   public void connect() {
@@ -39,32 +53,67 @@ public class Storage {
         .runTaskAsynchronously(plugin, () -> provider.addPassword(entry));
   }
 
-  public void getPasswords(Consumer<List<PasswordEntry>> callback) {
-    TaskChain<?> chain = plugin.newSharedChain("getPasswords");
-    chain
-        .async(() -> chain.setTaskData("passwords", provider.getPasswords()))
-        .sync(() -> callback.accept(chain.getTaskData("passwords")))
-        .execute();
-  }
-
   public void getPasswordEntry(UUID uuid, Consumer<PasswordEntry> callback) {
-    TaskChain<?> chain = plugin.newSharedChain("getPasswordEntry");
-    chain
-        .async(() -> chain.setTaskData("entry", provider.getPasswordEntry(uuid)))
-        .sync(() -> callback.accept(chain.getTaskData("entry")))
-        .execute();
-  }
+    PasswordEntry cached = cache.getIfPresent(uuid);
+    if (cached != null) {
+      callback.accept(cached);
+      cachedAllPasswords.add(cached);
+      return;
+    }
+    if (cachedAllPasswords.isEmpty()) {
+      TaskChain<?> chain = plugin.newSharedChain("getPasswordEntry");
+      chain
+          .async(() -> chain.setTaskData("everything", provider.getPasswords()))
+          .sync(
+              () -> {
+                cachedAllPasswords.addAll(chain.getTaskData("everything"));
 
-  public void getPasswordEntrySync(UUID uuid, Consumer<PasswordEntry> callback) {
-    callback.accept(provider.getPasswordEntry(uuid));
+                for (PasswordEntry entry : cachedAllPasswords) {
+                  if (entry.getPlayerUUID().equals(uuid)) {
+                    callback.accept(entry);
+                    break;
+                  }
+                }
+              })
+          .execute();
+      return;
+    }
+    for (PasswordEntry entry : cachedAllPasswords) {
+      if (entry.getPlayerUUID().equals(uuid)) {
+        callback.accept(entry);
+        break;
+      }
+    }
   }
 
   public void getAltAccounts(String ip, Consumer<List<PasswordEntry>> callback) {
-    TaskChain<?> chain = plugin.newSharedChain("getAltAccounts");
-    chain
-        .async(() -> chain.setTaskData("altAccounts", provider.getAltAccounts(ip)))
-        .sync(() -> callback.accept(chain.getTaskData("altAccounts")))
-        .execute();
+    if (cachedAllPasswords.isEmpty()) {
+      TaskChain<?> chain = plugin.newSharedChain("getAltAccounts");
+      chain
+          .async(() -> chain.setTaskData("everything", provider.getPasswords()))
+          .sync(
+              () -> {
+                cachedAllPasswords.addAll(chain.getTaskData("everything"));
+
+                List<PasswordEntry> ret = new ArrayList<>();
+                for (PasswordEntry entry : cachedAllPasswords) {
+                  if (entry.getPlayerIP().equalsIgnoreCase(ip)) {
+                    ret.add(entry);
+                  }
+                }
+                callback.accept(ret);
+              })
+          .execute();
+      return;
+    }
+
+    List<PasswordEntry> ret = new ArrayList<>();
+    for (PasswordEntry entry : cachedAllPasswords) {
+      if (entry.getPlayerIP().equalsIgnoreCase(ip)) {
+        ret.add(entry);
+      }
+    }
+    callback.accept(ret);
   }
 
   public void modifyPassword(UUID uuid, PasswordEntry entry) {

@@ -19,12 +19,6 @@ public interface StorageImplementation {
         .orElse(null);
   }
 
-  default List<PasswordEntry> getAltAccounts(String ip) {
-    return getPasswords().stream()
-        .filter(entry -> entry.getPlayerIP().equalsIgnoreCase(ip))
-        .collect(Collectors.toList());
-  }
-
   void modifyPassword(UUID owner, PasswordEntry entry);
 
   void removeEntry(UUID owner);

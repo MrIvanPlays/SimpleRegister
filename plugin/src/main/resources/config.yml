@@ -20,10 +20,6 @@ send_message_while_trying_move: true
 # Should we teleport the player every time to the set spawn or not
 forceSpawnTeleport: true
 
-# Should we teleport the player synchronously
-# NOTES: Async teleportation works only on paper.
-syncTeleportation: false
-
 # Storage settings
 database:
   # Database type. By default it's h2
