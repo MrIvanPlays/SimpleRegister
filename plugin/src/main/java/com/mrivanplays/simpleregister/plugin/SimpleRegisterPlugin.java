@@ -1,8 +1,5 @@
 package com.mrivanplays.simpleregister.plugin;
 
-import co.aikar.taskchain.BukkitTaskChainFactory;
-import co.aikar.taskchain.TaskChain;
-import co.aikar.taskchain.TaskChainFactory;
 import com.mrivanplays.simpleregister.plugin.commands.CommandChangePassword;
 import com.mrivanplays.simpleregister.plugin.commands.CommandLogin;
 import com.mrivanplays.simpleregister.plugin.commands.CommandRegister;
@@ -41,8 +38,6 @@ public final class SimpleRegisterPlugin extends JavaPlugin {
         EnumSet.of(StorageType.valueOf(config.getString("database.type").toUpperCase())));
   }
 
-  private TaskChainFactory taskChainFactory;
-
   @Override
   public void onEnable() {
     getServer()
@@ -51,7 +46,6 @@ public final class SimpleRegisterPlugin extends JavaPlugin {
             this, "simpleregister:plugin", new PluginMessageReceiver(this));
     getServer().getMessenger().registerOutgoingPluginChannel(this, "simpleregister:plugin");
     Log4jFiltering.setup();
-    taskChainFactory = BukkitTaskChainFactory.create(this);
     long start = System.currentTimeMillis();
     storage = new Storage(this);
     storage.connect();
@@ -111,13 +105,5 @@ public final class SimpleRegisterPlugin extends JavaPlugin {
 
   public DependencyManager getDependencyManager() {
     return dependencyManager;
-  }
-
-  public <T> TaskChain<T> newChain() {
-    return taskChainFactory.newChain();
-  }
-
-  public <T> TaskChain<T> newSharedChain(String name) {
-    return taskChainFactory.newSharedChain(name);
   }
 }

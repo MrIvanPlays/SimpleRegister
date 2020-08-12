@@ -12,13 +12,6 @@ public interface StorageImplementation {
 
   void addPassword(PasswordEntry entry);
 
-  default PasswordEntry getPasswordEntry(UUID uuid) {
-    return getPasswords().stream()
-        .filter(entry -> entry.getPlayerUUID().equals(uuid))
-        .findFirst()
-        .orElse(null);
-  }
-
   void modifyPassword(UUID owner, PasswordEntry entry);
 
   void removeEntry(UUID owner);

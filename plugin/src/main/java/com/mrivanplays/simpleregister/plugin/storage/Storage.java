@@ -1,6 +1,5 @@
 package com.mrivanplays.simpleregister.plugin.storage;
 
-import co.aikar.taskchain.TaskChain;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.mrivanplays.simpleregister.plugin.DatabaseCredentials;
@@ -17,7 +16,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
 public class Storage {
@@ -28,14 +31,25 @@ public class Storage {
   private Cache<UUID, PasswordEntry> cache =
       CacheBuilder.newBuilder().expireAfterWrite(90, TimeUnit.SECONDS).build();
   private Set<PasswordEntry> cachedAllPasswords = new HashSet<>();
+  private Lock passwordsLock = new ReentrantLock();
+  private final ScheduledExecutorService ASYNC_OPERATIONS =
+      Executors.newSingleThreadScheduledExecutor();
 
   public Storage(SimpleRegisterPlugin plugin) {
     this.plugin = plugin;
     provider = supplyDrop();
-    plugin
-        .getServer()
-        .getScheduler()
-        .scheduleSyncRepeatingTask(plugin, () -> cachedAllPasswords.clear(), 600, 400); // 20s
+    ASYNC_OPERATIONS.scheduleAtFixedRate(
+        () -> {
+          passwordsLock.lock();
+          try {
+            cachedAllPasswords.clear();
+          } finally {
+            passwordsLock.unlock();
+          }
+        },
+        20,
+        20,
+        TimeUnit.SECONDS);
   }
 
   public void connect() {
@@ -47,10 +61,7 @@ public class Storage {
   }
 
   public void addPassword(PasswordEntry entry) {
-    plugin
-        .getServer()
-        .getScheduler()
-        .runTaskAsynchronously(plugin, () -> provider.addPassword(entry));
+    ASYNC_OPERATIONS.submit(() -> provider.addPassword(entry));
   }
 
   public void getPasswordEntry(UUID uuid, Consumer<PasswordEntry> callback) {
@@ -61,21 +72,29 @@ public class Storage {
       return;
     }
     if (cachedAllPasswords.isEmpty()) {
-      TaskChain<?> chain = plugin.newSharedChain("getPasswordEntry");
-      chain
-          .async(() -> chain.setTaskData("everything", provider.getPasswords()))
-          .sync(
-              () -> {
-                cachedAllPasswords.addAll(chain.getTaskData("everything"));
-
-                for (PasswordEntry entry : cachedAllPasswords) {
-                  if (entry.getPlayerUUID().equals(uuid)) {
-                    callback.accept(entry);
-                    break;
-                  }
-                }
-              })
-          .execute();
+      ASYNC_OPERATIONS.submit(
+          () -> {
+            List<PasswordEntry> passwords = provider.getPasswords();
+            for (PasswordEntry entry : passwords) {
+              if (entry.getPlayerUUID().equals(uuid)) {
+                callback.accept(entry);
+                break;
+              }
+            }
+            plugin
+                .getServer()
+                .getScheduler()
+                .runTask(
+                    plugin,
+                    () -> {
+                      passwordsLock.lock();
+                      try {
+                        cachedAllPasswords.addAll(passwords);
+                      } finally {
+                        passwordsLock.unlock();
+                      }
+                    });
+          });
       return;
     }
     for (PasswordEntry entry : cachedAllPasswords) {
@@ -88,22 +107,30 @@ public class Storage {
 
   public void getAltAccounts(String ip, Consumer<List<PasswordEntry>> callback) {
     if (cachedAllPasswords.isEmpty()) {
-      TaskChain<?> chain = plugin.newSharedChain("getAltAccounts");
-      chain
-          .async(() -> chain.setTaskData("everything", provider.getPasswords()))
-          .sync(
-              () -> {
-                cachedAllPasswords.addAll(chain.getTaskData("everything"));
-
-                List<PasswordEntry> ret = new ArrayList<>();
-                for (PasswordEntry entry : cachedAllPasswords) {
-                  if (entry.getPlayerIP().equalsIgnoreCase(ip)) {
-                    ret.add(entry);
-                  }
-                }
-                callback.accept(ret);
-              })
-          .execute();
+      ASYNC_OPERATIONS.submit(
+          () -> {
+            List<PasswordEntry> passwords = provider.getPasswords();
+            List<PasswordEntry> alts = new ArrayList<>();
+            for (PasswordEntry entry : passwords) {
+              if (entry.getPlayerIP().equalsIgnoreCase(ip)) {
+                alts.add(entry);
+              }
+            }
+            plugin
+                .getServer()
+                .getScheduler()
+                .runTask(
+                    plugin,
+                    () -> {
+                      callback.accept(alts);
+                      passwordsLock.lock();
+                      try {
+                        cachedAllPasswords.addAll(passwords);
+                      } finally {
+                        passwordsLock.unlock();
+                      }
+                    });
+          });
       return;
     }
 
@@ -117,17 +144,11 @@ public class Storage {
   }
 
   public void modifyPassword(UUID uuid, PasswordEntry entry) {
-    plugin
-        .getServer()
-        .getScheduler()
-        .runTaskAsynchronously(plugin, () -> provider.modifyPassword(uuid, entry));
+    ASYNC_OPERATIONS.submit(() -> provider.modifyPassword(uuid, entry));
   }
 
   public void removeEntry(UUID uuid) {
-    plugin
-        .getServer()
-        .getScheduler()
-        .runTaskAsynchronously(plugin, () -> provider.removeEntry(uuid));
+    ASYNC_OPERATIONS.submit(() -> provider.removeEntry(uuid));
   }
 
   private StorageImplementation supplyDrop() {

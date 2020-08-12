@@ -2,10 +2,15 @@ package com.mrivanplays.simpleregister.plugin.listeners;
 
 import com.mrivanplays.simpleregister.plugin.SimpleRegisterPlugin;
 import com.mrivanplays.simpleregister.plugin.TaskRegistry;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import org.bukkit.Location;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
@@ -15,18 +20,18 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.scheduler.BukkitTask;
 
 // todo: Ivan, have you heard of single responcibility principle ????
 public class PluginEventListener implements Listener {
 
   private final SimpleRegisterPlugin plugin;
+  private final ScheduledExecutorService ASYNC_LOGIN = Executors.newScheduledThreadPool(32);
 
   public PluginEventListener(SimpleRegisterPlugin plugin) {
     this.plugin = plugin;
   }
 
-  @EventHandler
+  @EventHandler(priority = EventPriority.LOWEST)
   public void onJoin(PlayerJoinEvent event) {
     Player player = event.getPlayer();
     Location oldLocation = player.getLocation();
@@ -72,13 +77,10 @@ public class PluginEventListener implements Listener {
                     });
           }
         };
-    BukkitTask task =
-        plugin
-            .getServer()
-            .getScheduler()
-            .runTaskTimerAsynchronously(
-                plugin, r, 0, plugin.getConfiguration().getInt("spam_each_seconds") * 20);
-    TaskRegistry.putTask(player.getUniqueId(), task);
+    ScheduledFuture<?> future =
+        ASYNC_LOGIN.scheduleAtFixedRate(
+            r, 0, plugin.getConfig().getInt("spam_each_seconds"), TimeUnit.SECONDS);
+    TaskRegistry.putTask(player.getUniqueId(), future);
   }
 
   @EventHandler

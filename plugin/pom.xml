@@ -54,10 +54,6 @@
                   <pattern>org.postgresql</pattern>
                   <shadedPattern>com.mrivanplays.simpleregister.libs.postgresql</shadedPattern>
                 </relocation>
-                <relocation>
-                  <pattern>co.aikar.taskchain</pattern>
-                  <shadedPattern>com.mrivanplays.simpleregister.libs.taskchain</shadedPattern>
-                </relocation>
               </relocations>
               <filters>
                 <filter>
@@ -124,12 +120,6 @@
       <artifactId>HikariCP</artifactId>
       <version>3.4.2</version>
       <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>co.aikar</groupId>
-      <artifactId>taskchain-bukkit</artifactId>
-      <version>3.7.2</version>
-      <scope>compile</scope>
     </dependency>
   </dependencies>
 
